@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Stats — Repository Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" crossorigin>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#000;--bg2:#0a0a0a;--card:rgba(255,255,255,.042);--card-h:rgba(255,255,255,.072);
+      --border:rgba(255,255,255,.082);--border-h:rgba(255,255,255,.16);
+      --text:#fff;--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.3);
+      --blue:#0A84FF;--green:#30D158;--yellow:#FFD60A;--orange:#FF9F0A;
+      --red:#FF453A;--purple:#BF5AF2;--teal:#5AC8FA;--pink:#FF375F;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','SF Pro Display',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:10px}
+
+    /* ── Navbar ── */
+    .nav{position:fixed;top:14px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:1200px;
+      background:rgba(8,8,8,.75);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+      border:1px solid var(--border);border-radius:18px;z-index:300;padding:13px 22px;
+      display:flex;align-items:center;justify-content:space-between}
+    .nav-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:650;letter-spacing:-.025em;color:var(--text);text-decoration:none;cursor:pointer;background:none;border:none}
+    .nav-tag{font-size:12.5px;color:var(--text3)}
+
+    /* ── Hero ── */
+    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:130px 24px 80px;text-align:center;position:relative;overflow:hidden;transition:min-height .5s ease,padding-bottom .5s ease}
+    .hero.shrunk{min-height:auto;padding-bottom:60px}
+    .hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 62%,rgba(10,132,255,.075) 0%,transparent 70%);pointer-events:none}
+    .badge{display:inline-flex;align-items:center;gap:7px;background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.22);border-radius:40px;padding:6px 16px;font-size:13px;font-weight:500;color:#5AC4FA;margin-bottom:28px}
+    .title{font-size:clamp(2.8rem,8vw,6.5rem);font-weight:800;letter-spacing:-.048em;line-height:.97;margin-bottom:20px;background:linear-gradient(165deg,#fff 30%,rgba(255,255,255,.55) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .subtitle{font-size:clamp(16px,2.2vw,19px);color:var(--text2);max-width:520px;margin:0 auto 44px;line-height:1.65}
+    .search-wrap{display:flex;gap:10px;width:100%;max-width:640px;margin:0 auto}
+    .search-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:14px;color:var(--text);font-size:16px;font-family:inherit;padding:15px 20px;outline:none;transition:all .2s;min-width:0}
+    .search-input::placeholder{color:var(--text3)}
+    .search-input:focus{background:rgba(255,255,255,.09);border-color:var(--blue);box-shadow:0 0 0 3px rgba(10,132,255,.14)}
+    .btn{background:var(--blue);color:#fff;font-size:15.5px;font-weight:600;font-family:inherit;padding:15px 26px;border-radius:14px;border:none;cursor:pointer;white-space:nowrap;letter-spacing:-.01em;transition:all .2s;flex-shrink:0}
+    .btn:hover{background:#0071E3;transform:translateY(-1px);box-shadow:0 8px 28px rgba(10,132,255,.32)}
+    .btn:active{transform:translateY(0);box-shadow:none}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .examples{margin-top:18px;font-size:13px;color:var(--text3)}
+    .examples button{background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-family:inherit;padding:0;transition:opacity .15s}
+    .examples button:hover{opacity:.75}
+
+    /* ── Dashboard ── */
+    .dash{display:none;max-width:1200px;margin:0 auto;padding:0 24px 140px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;transition:background .22s,border-color .22s}
+    .card:hover{background:var(--card-h);border-color:var(--border-h)}
+    .sec-label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:18px}
+    .sec-hint{font-size:13px;color:var(--text3);margin-top:-12px;margin-bottom:20px}
+
+    /* ── Repo header ── */
+    .repo-hdr{display:flex;align-items:flex-start;gap:20px;margin-bottom:36px;flex-wrap:wrap}
+    .repo-avatar{width:60px;height:60px;border-radius:15px;border:1px solid var(--border);flex-shrink:0}
+    .repo-meta{flex:1;min-width:0}
+    .repo-title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+    .repo-name{font-size:26px;font-weight:700;letter-spacing:-.03em}
+    .vis-badge{background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.22);color:#30D158;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500}
+    .archived-badge{background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.22);color:var(--orange);border-radius:20px;padding:3px 11px;font-size:12px;font-weight:500}
+    .repo-desc{font-size:15.5px;color:var(--text2);line-height:1.55;max-width:680px}
+    .topics{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+    .topic{background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.22);color:#5AC4FA;border-radius:30px;padding:4px 13px;font-size:12px;font-weight:500}
+    .btn-gh{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:12px;padding:10px 17px;font-size:13.5px;font-weight:500;color:var(--text);text-decoration:none;transition:all .18s;white-space:nowrap;flex-shrink:0}
+    .btn-gh:hover{background:rgba(255,255,255,.11);border-color:var(--border-h)}
+
+    /* ── Section nav ── */
+    .sec-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;overflow-x:auto;padding-bottom:4px}
+    .sec-nav::-webkit-scrollbar{height:0}
+    .nav-tab{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:7px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;text-decoration:none;transition:all .18s;font-family:inherit}
+    .nav-tab:hover{background:rgba(255,255,255,.1);color:var(--text);border-color:var(--border-h)}
+
+    /* ── Stats grid ── */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:13px;margin-bottom:20px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;transition:all .22s;opacity:0;cursor:default}
+    .stat-card:hover{background:var(--card-h);border-color:var(--border-h);transform:translateY(-2px)}
+    .stat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+    .stat-lbl{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px}
+    .stat-val{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+
+    /* ── Two / three col ── */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+
+    /* ── Heatmap ── */
+    .heatmap-wrap{overflow-x:auto;padding-bottom:4px}
+    .heatmap-wrap::-webkit-scrollbar{height:4px}
+    .heatmap-svg-cell{cursor:default;transition:opacity .12s}
+    .heatmap-svg-cell:hover{opacity:.85!important}
+
+    /* ── Donut chart ── */
+    .donut-wrap{display:flex;align-items:center;gap:24px}
+    .donut-legend{flex:1;min-width:0}
+    .lang-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .lang-row:last-child{border-bottom:none}
+    .lang-l{display:flex;align-items:center;gap:10px}
+    .lang-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .lang-name{font-size:13.5px;font-weight:500}
+    .lang-r{display:flex;align-items:center;gap:10px}
+    .mini-bar{width:66px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+    .mini-fill{height:100%;border-radius:2px}
+    .lang-pct{font-size:13px;color:var(--text2);min-width:36px;text-align:right}
+
+    /* ── LOC card ── */
+    .loc-number{font-size:clamp(2rem,5vw,3.8rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+      background:linear-gradient(135deg,var(--green) 0%,#5AC8FA 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+    /* ── Code growth chart ── */
+    .growth-chart{width:100%;overflow:hidden;position:relative}
+
+    /* ── Details ── */
+    .det-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .det-row:last-child{border-bottom:none}
+    .det-lbl{font-size:13px;color:var(--text2)}
+    .det-val{font-size:13px;font-weight:500;text-align:right}
+    .det-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+    /* ── Commit bars ── */
+    .commit-bars{height:72px;display:flex;align-items:flex-end;gap:3px}
+    .commit-bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;transition:opacity .15s;cursor:default;min-width:0}
+
+    /* ── Contributors ── */
+    .contrib-table{width:100%;border-collapse:collapse}
+    .contrib-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);padding:0 12px 12px;text-align:left}
+    .contrib-table th:not(:first-child){text-align:right}
+    .contrib-row{border-top:1px solid rgba(255,255,255,.05);transition:background .15s;cursor:pointer}
+    .contrib-row:hover{background:rgba(255,255,255,.03)}
+    .contrib-row td{padding:12px}
+    .contrib-cell-name{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+    .contrib-av{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.1);flex-shrink:0}
+    .contrib-login{font-size:14px;font-weight:600}
+    .contrib-num{font-size:14px;font-weight:600;text-align:right}
+    .contrib-bar-wrap{height:4px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:3px;overflow:hidden}
+    .contrib-bar-fill{height:100%;border-radius:2px}
+
+    /* ── Issues / PRs ── */
+    .issue-donut{display:flex;align-items:center;gap:20px;margin-bottom:20px}
+    .stat-big{font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+    .progress-bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin:8px 0 4px}
+    .progress-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.22,1,.36,1)}
+
+    /* ── Releases ── */
+    .release-item{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .release-item:last-child{border-bottom:none}
+    .release-dot{width:12px;height:12px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px}
+    .release-tag{font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+    .release-meta{font-size:13px;color:var(--text2)}
+    .release-dl{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--blue);margin-top:6px}
+
+    /* ── CI/CD ── */
+    .run-dots{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
+    .run-dot{width:14px;height:14px;border-radius:3px;flex-shrink:0;cursor:default;transition:transform .12s}
+    .run-dot:hover{transform:scale(1.3)}
+
+    /* ── Community health ── */
+    .health-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .health-item:last-child{border-bottom:none}
+    .health-label{font-size:14px;font-weight:500}
+    .health-yes{color:var(--green)}
+    .health-no{color:rgba(255,255,255,.3)}
+
+    /* ── Skeleton ── */
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 2s infinite;border-radius:10px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .sk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:13px;margin-bottom:20px}
+
+    /* ── Animations ── */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .afu{animation:fadeUp .52s cubic-bezier(.22,1,.36,1) forwards}
+    .afi{animation:fadeIn .4s ease forwards}
+
+    /* ── Error ── */
+    .err-wrap{display:none;text-align:center;padding:80px 0}
+    .err-icon{width:60px;height:60px;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.22);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+
+    /* ── Tooltip ── */
+    [data-tip]{position:relative}
+    [data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:rgba(28,28,28,.96);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:5px 10px;font-size:11.5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;font-family:inherit}
+    [data-tip]:hover::after{opacity:1}
+
+    /* ── Responsive ── */
+    @media(max-width:900px){.three-col{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){.two-col,.three-col{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}.repo-hdr{flex-direction:column}.donut-wrap{flex-direction:column}.contrib-table .hide-sm{display:none}}
+    @media(max-width:480px){.search-wrap{flex-direction:column}.btn{width:100%}.nav-tag{display:none}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="nav" role="banner">
+  <button class="nav-brand" onclick="resetView()" aria-label="GitHub Stats home">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+    </svg>
+    GitHub Stats
+  </button>
+  <span class="nav-tag">Repository Intelligence</span>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero" id="hero" aria-label="Search">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="badge">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Real-time · Public API · No login required
+  </div>
+  <h1 class="title">Repository<br>Intelligence</h1>
+  <p class="subtitle">Stars, commits, languages, lines of code, contributors, releases, CI/CD, security — for any public GitHub repo.</p>
+  <form class="search-wrap" id="searchForm" onsubmit="handleSearch(event)" role="search">
+    <label for="repoInput" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">GitHub repository</label>
+    <input type="text" id="repoInput" class="search-input" placeholder="owner/repository or GitHub URL" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="GitHub repository">
+    <button type="submit" class="btn" id="searchBtn">Analyze</button>
+  </form>
+  <p class="examples">
+    Try:
+    <button onclick="loadEx('vercel/next.js')">vercel/next.js</button> ·
+    <button onclick="loadEx('microsoft/vscode')">microsoft/vscode</button> ·
+    <button onclick="loadEx('facebook/react')">facebook/react</button> ·
+    <button onclick="loadEx('torvalds/linux')">torvalds/linux</button>
+  </p>
+</section>
+
+<!-- ── Dashboard ── -->
+<main class="dash" id="dash" aria-live="polite">
+
+  <!-- Skeleton -->
+  <div id="skeletonWrap" style="display:none">
+    <div class="skeleton" style="height:28px;width:280px;margin-bottom:36px"></div>
+    <div class="sk-grid">
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+      <div class="skeleton" style="height:108px;border-radius:20px"></div>
+    </div>
+    <div class="skeleton" style="height:180px;border-radius:20px;margin-bottom:16px"></div>
+    <div class="two-col">
+      <div class="skeleton" style="height:260px;border-radius:20px"></div>
+      <div class="skeleton" style="height:260px;border-radius:20px"></div>
+    </div>
+    <div class="skeleton" style="height:240px;border-radius:20px;margin-top:16px"></div>
+  </div>
+
+  <!-- Error -->
+  <div class="err-wrap" id="errWrap" role="alert">
+    <div class="err-icon" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <h2 id="errTitle" style="font-size:20px;font-weight:600;margin-bottom:8px"></h2>
+    <p id="errMsg" style="font-size:15px;color:var(--text2)"></p>
+  </div>
+
+  <!-- Content -->
+  <div id="content" style="display:none">
+
+    <!-- Repo header -->
+    <header class="repo-hdr afu" id="repoHdr">
+      <img id="ownerAv" src="" alt="" class="repo-avatar">
+      <div class="repo-meta">
+        <div class="repo-title-row">
+          <h2 class="repo-name" id="repoName"></h2>
+          <span id="visBadge" class="vis-badge"></span>
+          <span id="archBadge" class="archived-badge" style="display:none">Archived</span>
+        </div>
+        <p class="repo-desc" id="repoDesc"></p>
+        <div class="topics" id="repoTopics"></div>
+      </div>
+      <a id="repoLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-gh" aria-label="View on GitHub">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </header>
+
+    <!-- Stats grid -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- Section nav -->
+    <nav class="sec-nav" id="secNav" aria-label="Jump to section">
+      <a class="nav-tab" href="#s-activity">Activity</a>
+      <a class="nav-tab" href="#s-code">Code Analysis</a>
+      <a class="nav-tab" href="#s-contributors">Contributors</a>
+      <a class="nav-tab" href="#s-issues">Issues &amp; PRs</a>
+      <a class="nav-tab" href="#s-releases">Releases</a>
+      <a class="nav-tab" href="#s-cicd">CI / CD</a>
+      <a class="nav-tab" href="#s-security">Security &amp; Community</a>
+    </nav>
+
+    <!-- ── Activity ── -->
+    <section id="s-activity" style="margin-bottom:16px">
+      <div class="card" style="padding:26px 28px;margin-bottom:14px">
+        <p class="sec-label">Commit Activity</p>
+        <p class="sec-hint">Contributions over the last year</p>
+        <div class="heatmap-wrap" id="heatmapWrap" role="img" aria-label="Commit heatmap"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11.5px;color:var(--text3);flex-wrap:wrap;gap:8px">
+          <span id="heatmapFrom"></span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>Less</span>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(10,132,255,.12)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(10,132,255,.35)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(10,132,255,.6)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(10,132,255,.85)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(10,132,255,1)"></div>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px" id="activityStats"></div>
+    </section>
+
+    <!-- ── Code Analysis ── -->
+    <section id="s-code" style="margin-bottom:16px">
+      <div class="three-col">
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Languages</p>
+          <div id="donutWrap"></div>
+        </div>
+        <div class="card" style="padding:26px 28px;display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <p class="sec-label">Lines of Code</p>
+            <p class="sec-hint" id="locHint" style="font-size:11.5px">—</p>
+            <div class="loc-number" id="locNumber" style="margin:16px 0 10px">—</div>
+            <p style="font-size:13px;color:var(--text2)" id="locSub"></p>
+          </div>
+          <div id="locBreakdown" style="margin-top:20px"></div>
+        </div>
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Repository Details</p>
+          <div id="detailsContent"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:26px 28px;margin-bottom:0">
+        <p class="sec-label">Code Growth</p>
+        <p class="sec-hint">Weekly additions vs. deletions</p>
+        <div id="growthChart" style="height:100px"></div>
+        <div style="display:flex;gap:20px;margin-top:12px;font-size:12px">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,.7);display:inline-block"></span>Additions</span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,69,58,.7);display:inline-block"></span>Deletions</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Contributors ── -->
+    <section id="s-contributors" style="margin-bottom:16px">
+      <div class="card" style="padding:26px 28px">
+        <p class="sec-label">Top Contributors</p>
+        <p class="sec-hint" id="contribHint">Ranked by total commits</p>
+        <div style="overflow-x:auto">
+          <table class="contrib-table" id="contribTable" aria-label="Contributors">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Author</th>
+                <th class="hide-sm">Commits</th>
+                <th class="hide-sm">Lines Added</th>
+                <th class="hide-sm">Lines Deleted</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody id="contribBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Issues & PRs ── -->
+    <section id="s-issues" style="margin-bottom:16px">
+      <div class="two-col">
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Issues</p>
+          <div id="issuesContent"></div>
+        </div>
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Pull Requests</p>
+          <div id="prsContent"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Releases ── -->
+    <section id="s-releases" style="margin-bottom:16px">
+      <div class="card" style="padding:26px 28px">
+        <p class="sec-label">Releases</p>
+        <div id="releasesContent"></div>
+      </div>
+    </section>
+
+    <!-- ── CI/CD ── -->
+    <section id="s-cicd" style="margin-bottom:16px">
+      <div class="card" style="padding:26px 28px">
+        <p class="sec-label">CI / CD — Workflow Runs</p>
+        <div id="cicdContent"></div>
+      </div>
+    </section>
+
+    <!-- ── Security & Community ── -->
+    <section id="s-security" style="margin-bottom:0">
+      <div class="two-col">
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Community Health</p>
+          <div id="communityContent"></div>
+        </div>
+        <div class="card" style="padding:26px 28px">
+          <p class="sec-label">Security</p>
+          <div id="securityContent"></div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════
+   LANGUAGE COLORS
+═══════════════════════════════════════════════ */
+const LC={JavaScript:'#F1E05A',TypeScript:'#3178C6',Python:'#3572A5',Java:'#B07219','C++':'#F34B7D',C:'#555',
+  'C#':'#178600',Go:'#00ADD8',Rust:'#DEA584',Ruby:'#701516',Swift:'#F05138',Kotlin:'#A97BFF',PHP:'#4F5D95',
+  HTML:'#E34C26',CSS:'#563D7C',Shell:'#89E051',Dockerfile:'#384D54',Vue:'#41B883',Dart:'#00B4AB',Scala:'#C22D40',
+  R:'#198CE7',Lua:'#000080',Haskell:'#5E5086',Clojure:'#DB5855',Elixir:'#6E4A7E','Jupyter Notebook':'#DA5B0B',
+  TeX:'#3D6117',PowerShell:'#012456','Objective-C':'#438EFF',Perl:'#0298C3',SCSS:'#C6538C',Less:'#1D365D',
+  Sass:'#A53B70',CoffeeScript:'#244776',Assembly:'#6E4C13',Makefile:'#427819',MATLAB:'#E16737',
+  Nim:'#37775B',Zig:'#EC915C',Crystal:'#000100',Groovy:'#4298B8',Nix:'#7e7eff',
+};
+const lc=s=>{if(LC[s])return LC[s];let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h)+s.charCodeAt(i)|0;return'#'+((Math.abs(h)%0xbbbbbb)+0x222222).toString(16).padStart(6,'0')};
+
+/* ═══════════════════════════════════════════════
+   FORMATTERS
+═══════════════════════════════════════════════ */
+const fmt=n=>{if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n)};
+const fmtFull=n=>n.toLocaleString();
+const fmtBytes=b=>{if(b>=1073741824)return(b/1073741824).toFixed(2)+' GB';if(b>=1048576)return(b/1048576).toFixed(2)+' MB';if(b>=1024)return(b/1024).toFixed(1)+' KB';return b+' B'};
+const fmtDate=iso=>new Date(iso).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+const ago=iso=>{const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return'just now';if(s<3600)return~~(s/60)+'m ago';if(s<86400)return~~(s/3600)+'h ago';if(s<2592000)return~~(s/86400)+'d ago';if(s<31536000)return~~(s/2592000)+'mo ago';return~~(s/31536000)+'y ago'};
+const daysBetween=(a,b)=>Math.round(Math.abs(new Date(b)-new Date(a))/86400000);
+const parseRepo=raw=>{const s=raw.trim();const m=s.match(/github\.com\/([^\s\/]+\/[^\s\/\?#]+)/);if(m)return m[1].replace(/\.git$/,'');if(/^[\w.\-]+\/[\w.\-]+$/.test(s))return s;return null};
+const parseLinkCount=h=>{if(!h)return null;const m=h.match(/page=(\d+)>;\s*rel="last"/);return m?parseInt(m[1]):null};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ── Average bytes-per-line per language (for LOC fallback estimation) ── */
+const BPL={JavaScript:32,TypeScript:35,Python:38,Java:45,'C++':35,C:30,'C#':45,Go:32,Rust:35,Ruby:28,
+  Swift:38,Kotlin:42,PHP:32,HTML:60,CSS:25,SCSS:25,Shell:30,Dockerfile:35,Vue:40,Dart:38,Scala:45,
+  R:35,Lua:30,Haskell:40,Elixir:35,'Jupyter Notebook':50,PowerShell:35,'Objective-C':42,Perl:30,
+  CoffeeScript:28,Assembly:30,MATLAB:35,Makefile:25,TeX:50,Sass:25,Less:25,Nim:30,Zig:32,
+  Crystal:32,Groovy:42,'Vim script':28,Nix:30,MDX:55,Markdown:55,JSON:20,YAML:20,TOML:20,
+};
+const estimateLocFromBytes=langs=>Object.entries(langs).reduce((s,[l,b])=>s+Math.round(b/(BPL[l]||35)),0);
+
+/* Aggregate per-contributor weekly data into a code_frequency-style array */
+const deriveCodeFreqFromContribs=ctbs=>{
+  const m={};
+  for(const c of ctbs) for(const w of c.weeks||[]){
+    if(!m[w.w])m[w.w]=[w.w,0,0];
+    m[w.w][1]+=w.a; m[w.w][2]-=w.d; // deletions stored negative (like code_frequency)
+  }
+  return Object.values(m).sort((a,b)=>a[0]-b[0]).filter(([,a,d])=>a>0||d<0);
+};
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const setBtn=(t,d)=>{$('searchBtn').textContent=t;$('searchBtn').disabled=!!d};
+
+function showLoading(){
+  $('dash').style.display='block';
+  $('hero').classList.add('shrunk');
+  $('skeletonWrap').style.display='block';
+  $('errWrap').style.display='none';
+  $('content').style.display='none';
+  setBtn('Loading…',true);
+  setTimeout(()=>window.scrollTo({top:$('dash').offsetTop-30,behavior:'smooth'}),60);
+}
+function showError(title,msg){
+  $('dash').style.display='block';
+  $('hero').classList.add('shrunk');
+  $('skeletonWrap').style.display='none';
+  $('content').style.display='none';
+  $('errWrap').style.display='block';
+  $('errTitle').textContent=title;
+  $('errMsg').textContent=msg;
+  setBtn('Analyze',false);
+}
+function showContent(){
+  $('skeletonWrap').style.display='none';
+  $('errWrap').style.display='none';
+  $('content').style.display='block';
+  setBtn('Analyze',false);
+  setTimeout(()=>window.scrollTo({top:$('content').offsetTop-30,behavior:'smooth'}),60);
+}
+function resetView(){
+  $('hero').classList.remove('shrunk');
+  $('dash').style.display='none';
+  $('repoInput').value='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function loadEx(r){$('repoInput').value=r;handleSearch(new Event('submit'))}
+
+/* ═══════════════════════════════════════════════
+   SEARCH HANDLER
+═══════════════════════════════════════════════ */
+async function handleSearch(e){
+  e.preventDefault();
+  const repo=parseRepo($('repoInput').value);
+  if(!repo)return showError('Invalid format','Please enter owner/repo or a full GitHub URL.');
+  showLoading();
+  await fetchRepo(repo);
+}
+
+/* ═══════════════════════════════════════════════
+   API FETCH  (two-phase: fast render → background retry for stats)
+═══════════════════════════════════════════════ */
+async function fetchRepo(repo){
+  const H={'Accept':'application/vnd.github.v3+json'};
+  const safe=async url=>{try{return await fetch(url,{headers:H})}catch{return null}};
+  const j=async(r,fb)=>r&&r.ok&&r.status!==202?r.json().catch(()=>fb):fb;
+
+  try{
+    const mainRes=await fetch(`https://api.github.com/repos/${repo}`,{headers:H});
+    if(!mainRes.ok){
+      if(mainRes.status===404)return showError('Repository not found',`"${repo}" doesn't exist or is private.`);
+      if(mainRes.status===403)return showError('Rate limit exceeded','GitHub API rate limit reached. Please wait a few minutes.');
+      return showError('Failed to load',`GitHub returned HTTP ${mainRes.status}.`);
+    }
+    const main=await mainRes.json();
+
+    // Parallel fetches — stats endpoints may return 202 (computing); others are fast
+    const [langsRes,commitActRes,codeFreqRes,ctbStatsRes,relRes,pullsRes,branchRes,tagRes,runsRes,communityRes]=await Promise.all([
+      safe(`https://api.github.com/repos/${repo}/languages`),
+      safe(`https://api.github.com/repos/${repo}/stats/commit_activity`),
+      safe(`https://api.github.com/repos/${repo}/stats/code_frequency`),
+      safe(`https://api.github.com/repos/${repo}/stats/contributors`),
+      safe(`https://api.github.com/repos/${repo}/releases?per_page=10`),
+      safe(`https://api.github.com/repos/${repo}/pulls?state=all&per_page=100`),
+      safe(`https://api.github.com/repos/${repo}/branches?per_page=1`),
+      safe(`https://api.github.com/repos/${repo}/tags?per_page=1`),
+      safe(`https://api.github.com/repos/${repo}/actions/runs?per_page=30`),
+      safe(`https://api.github.com/repos/${repo}/community/profile`),
+    ]);
+
+    const langs       = await j(langsRes,{});
+    let   commitAct   = await j(commitActRes,null)??null;
+    let   codeFreq    = await j(codeFreqRes,null)??null;
+    let   ctbStats    = await j(ctbStatsRes,null)??null;
+    const releases    = await j(relRes,[]);
+    const pulls       = await j(pullsRes,[]);
+    const branchData  = await j(branchRes,[]);
+    const tagData     = await j(tagRes,[]);
+    const runsData    = await j(runsRes,null);
+    const community   = await j(communityRes,null);
+    const branchCount = parseLinkCount(branchRes?.headers?.get('Link'))??branchData.length;
+    const tagCount    = parseLinkCount(tagRes?.headers?.get('Link'))??tagData.length;
+
+    // Normalize: null means "still computing"; [] means "got it but empty"
+    commitAct = Array.isArray(commitAct)?commitAct:null;
+    codeFreq  = Array.isArray(codeFreq) ?codeFreq :null;
+    ctbStats  = Array.isArray(ctbStats) ?ctbStats :null;
+
+    // Render immediately — missing stats use fallback estimates
+    render(main,langs,commitAct||[],codeFreq,ctbStats||[],
+      Array.isArray(releases)?releases:[],Array.isArray(pulls)?pulls:[],
+      branchCount,tagCount,runsData,community);
+
+    // Background retry loop: GitHub 202 means "ask again soon"
+    const needsRetry=!commitAct||!codeFreq||!ctbStats;
+    if(needsRetry){
+      // Kick off background retries — don't await so UI is already visible
+      retryStats(repo,main,langs,commitAct,codeFreq,ctbStats,H);
+    }
+
+  }catch(err){
+    console.error(err);
+    showError('Network error','Could not reach GitHub API. Check your internet connection.');
+  }
+}
+
+/* Background retry for GitHub computed stats endpoints (up to 4 attempts, 3s apart) */
+async function retryStats(repo,main,langs,commitAct,codeFreq,ctbStats,H){
+  const safeJson=async url=>{
+    try{const r=await fetch(url,{headers:H});if(r.ok&&r.status!==202)return r.json();}catch{}
+    return null;
+  };
+
+  for(let attempt=0;attempt<4;attempt++){
+    if(commitAct&&codeFreq&&ctbStats)break;
+    await sleep(3000);
+
+    const [newCa,newCf,newCs]=await Promise.all([
+      !commitAct?safeJson(`https://api.github.com/repos/${repo}/stats/commit_activity`):null,
+      !codeFreq ?safeJson(`https://api.github.com/repos/${repo}/stats/code_frequency`):null,
+      !ctbStats ?safeJson(`https://api.github.com/repos/${repo}/stats/contributors`):null,
+    ]);
+
+    if(!commitAct&&Array.isArray(newCa)&&newCa.length){
+      commitAct=newCa;
+      renderHeatmap(commitAct);
+      renderActivityStats(commitAct,main);
+    }
+    if(!ctbStats&&Array.isArray(newCs)&&newCs.length){
+      ctbStats=newCs;
+      renderContributors(ctbStats);
+    }
+    if(!codeFreq&&Array.isArray(newCf)&&newCf.length){
+      codeFreq=newCf;
+      applyCodeFreq(codeFreq,langs,'commit history');
+    } else if(!codeFreq&&ctbStats?.length){
+      // Derive code_frequency from contributor weekly additions/deletions
+      const derived=deriveCodeFreqFromContribs(ctbStats);
+      if(derived.length){codeFreq=derived;applyCodeFreq(codeFreq,langs,'contributor weekly data');}
+    }
+  }
+
+  // Final fallback: language byte sizes → LOC estimate
+  if(!codeFreq){
+    const fallbackLOC=estimateLocFromBytes(langs);
+    if(fallbackLOC>0)applyLocFallback(fallbackLOC,langs);
+  }
+}
+
+/* Apply newly-arrived code_frequency data to LOC + Growth sections */
+function applyCodeFreq(codeFreq,langs,source='commit history'){
+  const netLOC=codeFreq.reduce((s,[,a,d])=>s+a+d,0);
+  const totalAdds=codeFreq.reduce((s,[,a])=>s+(a>0?a:0),0);
+  renderLOC(netLOC,totalAdds,codeFreq,langs,source);
+  renderGrowth(codeFreq);
+  // Update the LOC stat card in the top grid
+  const locCard=document.querySelector('[data-loc-card]');
+  if(locCard&&netLOC>0) locCard.textContent=fmt(netLOC);
+}
+
+/* Apply language-bytes LOC fallback */
+function applyLocFallback(fallbackLOC,langs){
+  $('locNumber').textContent='~'+fmtFull(fallbackLOC);
+  $('locHint').textContent='Estimated from file sizes (stats computing)';
+  $('locHint').style.color='var(--orange)';
+  const total=Object.values(langs).reduce((a,b)=>a+b,0);
+  if(total>0){
+    const sorted=Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    $('locBreakdown').innerHTML=`<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px">`+
+      sorted.map(([l,b])=>{
+        const loc=Math.round(b/(BPL[l]||35));
+        return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="lang-dot" style="background:${lc(l)}"></div>
+          <span style="font-size:12.5px;flex:1">${l}</span>
+          <span style="font-size:12.5px;color:var(--text2)">~${fmt(loc)} lines</span>
+        </div>`;
+      }).join('')+'</div>';
+  }
+  // Language-size growth fallback
+  renderGrowthFromLangs(langs);
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN RENDER
+═══════════════════════════════════════════════ */
+function render(repo,langs,commitAct,codeFreq,ctbStats,releases,pulls,branchCount,tagCount,runsData,community){
+
+  /* ── Header ── */
+  $('ownerAv').src=repo.owner.avatar_url;
+  $('ownerAv').alt=repo.owner.login;
+  $('repoName').textContent=repo.full_name;
+  $('visBadge').textContent=repo.private?'Private':'Public';
+  if(repo.archived)$('archBadge').style.display='';
+  $('repoDesc').textContent=repo.description||'No description provided.';
+  $('repoLink').href=repo.html_url;
+  $('repoTopics').innerHTML=(repo.topics||[]).slice(0,10).map(t=>`<span class="topic">${t}</span>`).join('');
+
+  /* ── Stats cards ── */
+  const totalLangBytes=Object.values(langs).reduce((a,b)=>a+b,0);
+  const cf=codeFreq||[];
+  const netLOC=cf.reduce((s,[,a,d])=>s+a+d,0);
+  const totalAdds=cf.reduce((s,[,a])=>s+(a>0?a:0),0);
+
+  const cards=[
+    {ic:iStar(),  lbl:'Stars',         val:fmt(repo.stargazers_count), color:'#FFD60A'},
+    {ic:iFork(),  lbl:'Forks',         val:fmt(repo.forks_count),      color:'#0A84FF'},
+    {ic:iEye(),   lbl:'Watchers',      val:fmt(repo.subscribers_count),color:'#30D158'},
+    {ic:iIssue(), lbl:'Open Issues',   val:fmt(repo.open_issues_count),color:'#FF9F0A'},
+    {ic:iBranch(),lbl:'Branches',      val:branchCount>0?fmt(branchCount):'—',color:'#FF375F'},
+    {ic:iTag(),   lbl:'Tags',          val:tagCount>0?fmt(tagCount):'—',color:'#BF5AF2'},
+    {ic:iCode(),  lbl:'Languages',     val:String(Object.keys(langs).length||'—'),color:'#5AC8FA'},
+    {ic:iSize(),  lbl:'Repo Size',     val:fmtBytes(repo.size*1024),   color:'#FF9F0A'},
+    ...(netLOC>0?[{ic:iLines(),lbl:'Est. Lines of Code',val:fmt(netLOC),color:'#30D158',locCard:true}]:[]),
+    ...(repo.license?[{ic:iFile(),lbl:'License',val:repo.license.spdx_id||'Custom',color:'#64D2FF'}]:[]),
+    ...(releases.length?[{ic:iRelease(),lbl:'Latest Release',val:releases[0].tag_name,color:'#30D158'}]:[]),
+  ];
+
+  $('statsGrid').innerHTML=cards.map((c,i)=>`
+    <article class="stat-card" style="animation:fadeUp .52s cubic-bezier(.22,1,.36,1) ${i*.036}s forwards" aria-label="${c.lbl}: ${c.val}">
+      <div class="stat-icon" style="background:${c.color}18;color:${c.color}">${c.ic}</div>
+      <div class="stat-lbl">${c.lbl}</div>
+      <div class="stat-val" style="color:${c.color}"${c.locCard?' data-loc-card="1"':''}>${c.val}</div>
+    </article>`).join('');
+
+  /* ── Sections ── */
+  renderHeatmap(commitAct);
+  renderActivityStats(commitAct,repo);
+  renderDonut(langs,totalLangBytes);
+  // LOC: use real data if available, else show fallback estimate from language bytes
+  if(netLOC>0) renderLOC(netLOC,totalAdds,cf,langs,'commit history');
+  else { const fb=estimateLocFromBytes(langs); applyLocFallback(fb,langs); }
+  renderDetails(repo);
+  renderGrowth(cf);
+  renderContributors(ctbStats);
+  renderIssues(repo,pulls);
+  renderReleases(releases);
+  renderCICD(runsData);
+  renderSecurity(community,repo);
+
+  showContent();
+}
+
+/* ═══════════════════════════════════════════════
+   HEATMAP
+═══════════════════════════════════════════════ */
+function renderHeatmap(activity){
+  const el=$('heatmapWrap');
+  if(!activity||!activity.length){
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);padding:16px 0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;animation:spin 1.2s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      Computing activity data… updating automatically.
+    </div>`;
+    return;
+  }
+
+  const cellSz=12,gap=3,step=cellSz+gap;
+  const weeks=activity.slice(-52);
+  const max=Math.max(...weeks.flatMap(w=>w.days),1);
+
+  const hColor=(n,mx)=>{
+    if(!n)return'rgba(255,255,255,.06)';
+    const t=Math.min(n/mx,1);
+    return`rgba(10,132,255,${(.12+t*.88).toFixed(2)})`;
+  };
+
+  const W=weeks.length,H=7;
+  const svgW=40+W*step,svgH=20+H*step+10;
+
+  let paths='',labels='';
+  let prevMonth=-1;
+  weeks.forEach((wk,wi)=>{
+    const d=new Date(wk.week*1000);
+    const mo=d.getMonth();
+    if(mo!==prevMonth){
+      labels+=`<text x="${40+wi*step}" y="14" font-size="10" fill="rgba(255,255,255,.35)" font-family="inherit">${d.toLocaleDateString('en-US',{month:'short'})}</text>`;
+      prevMonth=mo;
+    }
+    wk.days.forEach((cnt,di)=>{
+      const x=40+wi*step,y=20+di*step;
+      const col=hColor(cnt,max);
+      const dateStr=new Date((wk.week+di*86400)*1000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      paths+=`<rect class="heatmap-svg-cell" x="${x}" y="${y}" width="${cellSz}" height="${cellSz}" rx="2.5" fill="${col}" opacity="1"><title>${cnt} commit${cnt!==1?'s':''} · ${dateStr}</title></rect>`;
+    });
+  });
+
+  // Day labels
+  const dayLabels=['Sun','','Mon','','Tue','','Wed'].map((d,di)=>
+    d?`<text x="0" y="${20+di*step+cellSz*.75}" font-size="9" fill="rgba(255,255,255,.3)" font-family="inherit">${d}</text>`:''
+  ).join('');
+
+  el.innerHTML=`<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block">${labels}${dayLabels}${paths}</svg>`;
+
+  const oldest=new Date(weeks[0]?.week*1000);
+  $('heatmapFrom').textContent=oldest.toLocaleDateString('en-US',{month:'long',year:'numeric'})+' → Today';
+}
+
+/* ── Activity summary stats ── */
+function renderActivityStats(activity,repo){
+  if(!activity.length){$('activityStats').innerHTML='';return}
+  const weeks=activity.slice(-52);
+  const totalCommits=weeks.reduce((s,w)=>s+w.total,0);
+  const avgPerWeek=(totalCommits/Math.max(weeks.filter(w=>w.total>0).length,1)).toFixed(1);
+  const bestWeek=weeks.reduce((a,b)=>b.total>a.total?b:a,{total:0});
+  const bestWkDate=bestWeek.week?new Date(bestWeek.week*1000).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
+  const activeDays=weeks.reduce((s,w)=>s+w.days.filter(d=>d>0).length,0);
+
+  $('activityStats').innerHTML=[
+    {lbl:'Commits (last year)',val:fmtFull(totalCommits),color:'var(--blue)'},
+    {lbl:'Avg per active week',val:avgPerWeek,color:'var(--teal)'},
+    {lbl:'Busiest week',val:`${bestWeek.total} commits`,sub:bestWkDate,color:'var(--yellow)'},
+    {lbl:'Active days (year)',val:fmtFull(activeDays),color:'var(--green)'},
+  ].map(s=>`
+    <div class="card" style="padding:18px 20px">
+      <div class="stat-lbl">${s.lbl}</div>
+      <div style="font-size:22px;font-weight:700;letter-spacing:-.03em;color:${s.color};margin-top:6px">${s.val}</div>
+      ${s.sub?`<div style="font-size:11.5px;color:var(--text3);margin-top:3px">${s.sub}</div>`:''}
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE DONUT (SVG)
+═══════════════════════════════════════════════ */
+function renderDonut(langs,total){
+  const el=$('donutWrap');
+  if(!total){el.innerHTML='<p style="font-size:14px;color:var(--text3)">No language data.</p>';return}
+
+  const sorted=Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const cx=90,cy=90,R=72,r=48;
+
+  function arc(sAng,eAng,fill){
+    const toR=a=>(a-90)*Math.PI/180;
+    const s=toR(sAng),e=toR(eAng);
+    const x1=cx+R*Math.cos(s),y1=cy+R*Math.sin(s);
+    const x2=cx+R*Math.cos(e),y2=cy+R*Math.sin(e);
+    const x3=cx+r*Math.cos(e),y3=cy+r*Math.sin(e);
+    const x4=cx+r*Math.cos(s),y4=cy+r*Math.sin(s);
+    const lg=(eAng-sAng)>180?1:0;
+    return`<path d="M${x1},${y1} A${R},${R},0,${lg},1,${x2},${y2} L${x3},${y3} A${r},${r},0,${lg},0,${x4},${y4} Z" fill="${fill}"/>`;
+  }
+
+  let startDeg=0,paths='';
+  sorted.forEach(([lang,bytes])=>{
+    const deg=bytes/total*360;
+    const endDeg=startDeg+deg;
+    const gap=sorted.length>1?1.5:0;
+    paths+=arc(startDeg+gap,endDeg-gap,lc(lang));
+    startDeg=endDeg;
+  });
+
+  const topLang=sorted[0]?.[0]||'';
+  const topPct=sorted[0]?(sorted[0][1]/total*100).toFixed(0)+'%':'';
+
+  const svg=`<svg viewBox="0 0 180 180" width="160" height="160" style="flex-shrink:0" aria-hidden="true">
+    ${paths}
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="13" font-weight="700" fill="white" font-family="inherit">${topPct}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.5)" font-family="inherit">${topLang}</text>
+  </svg>`;
+
+  const legend=sorted.map(([lang,bytes])=>{
+    const p=(bytes/total*100).toFixed(1);
+    return`<div class="lang-row">
+      <div class="lang-l"><div class="lang-dot" style="background:${lc(lang)}"></div><span class="lang-name">${lang}</span></div>
+      <div class="lang-r">
+        <div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${lc(lang)}"></div></div>
+        <span class="lang-pct">${p}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`<div class="donut-wrap"><div>${svg}</div><div class="donut-legend">${legend}</div></div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   LOC
+═══════════════════════════════════════════════ */
+function renderLOC(netLOC,totalAdds,codeFreq,langs,source){
+  $('locNumber').textContent=fmtFull(netLOC);
+  $('locHint').textContent=`Source: ${source||'commit history'}`;
+  $('locHint').style.color='';
+  $('locSub').innerHTML=`<strong>${fmtFull(totalAdds)}</strong> lines added across full history`;
+
+  // Per-language estimated lines
+  const total=Object.values(langs).reduce((a,b)=>a+b,0);
+  if(total>0){
+    const sorted=Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    $('locBreakdown').innerHTML=`<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px">`+
+      sorted.map(([l,b])=>{
+        const loc=Math.round(b/(BPL[l]||35));
+        return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="lang-dot" style="background:${lc(l)}"></div>
+          <span style="font-size:12.5px;flex:1">${l}</span>
+          <span style="font-size:12.5px;color:var(--text2)">~${fmt(loc)} lines</span>
+        </div>`;
+      }).join('')+'</div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   DETAILS
+═══════════════════════════════════════════════ */
+function renderDetails(repo){
+  const el=$('detailsContent');
+  const rows=[
+    {lbl:'Created',   val:fmtDate(repo.created_at), sub:ago(repo.created_at)},
+    {lbl:'Last push', val:fmtDate(repo.pushed_at),  sub:ago(repo.pushed_at)},
+    {lbl:'Updated',   val:fmtDate(repo.updated_at), sub:ago(repo.updated_at)},
+    {lbl:'Subscribers',val:fmtFull(repo.subscribers_count)},
+    {lbl:'Repo size', val:fmtBytes(repo.size*1024)},
+    ...(repo.license?[{lbl:'License',val:repo.license.name}]:[]),
+    ...(repo.homepage?[{lbl:'Website',href:repo.homepage,val:repo.homepage.replace(/^https?:\/\//,'').replace(/\/$/,'')}]:[]),
+    ...(repo.parent?[{lbl:'Forked from',href:repo.parent.html_url,val:repo.parent.full_name}]:[]),
+  ];
+  el.innerHTML=rows.map(r=>`<div class="det-row">
+    <span class="det-lbl">${r.lbl}</span>
+    <div>
+      ${r.href?`<a href="${r.href}" target="_blank" rel="noopener" class="det-val" style="color:var(--blue);text-decoration:none">${r.val}</a>`:`<div class="det-val">${r.val}</div>`}
+      ${r.sub?`<div class="det-sub">${r.sub}</div>`:''}
+    </div>
+  </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   CODE GROWTH CHART (SVG area)
+═══════════════════════════════════════════════ */
+function renderGrowth(codeFreq){
+  const el=$('growthChart');
+  if(!codeFreq||!codeFreq.length){
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;height:100%;font-size:13px;color:var(--text3)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;animation:spin 1.2s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      Computing code frequency data… will update automatically.
+    </div>`;
+    return;
+  }
+
+  const data=codeFreq.slice(-52);
+  const W=el.parentElement.clientWidth-56||600,H=100;
+  const maxVal=Math.max(...data.flatMap(([,a,d])=>[a,Math.abs(d)]),1);
+  const mid=H*0.5;
+  const xStep=W/data.length;
+
+  let addPath=`M0,${mid}`,delPath=`M0,${mid}`;
+  data.forEach(([,a,d],i)=>{
+    const x=(i+1)*xStep;
+    addPath+=` L${x},${mid-((a/maxVal)*mid*.9)}`;
+    delPath+=` L${x},${mid+((Math.abs(d)/maxVal)*mid*.9)}`;
+  });
+  addPath+=` L${W},${mid} Z`;
+  delPath+=` L${W},${mid} Z`;
+
+  el.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px" aria-hidden="true">
+    <line x1="0" y1="${mid}" x2="${W}" y2="${mid}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+    <path d="${addPath}" fill="rgba(48,209,88,.22)" stroke="rgba(48,209,88,.7)" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="${delPath}" fill="rgba(255,69,58,.16)" stroke="rgba(255,69,58,.6)" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+/* Language-size fallback for growth chart (shown while real data is computing) */
+function renderGrowthFromLangs(langs){
+  const el=$('growthChart');
+  const sorted=Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  if(!sorted.length)return;
+  const maxBytes=sorted[0][1];
+  el.innerHTML=`<div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Language file size distribution (code growth data computing…)</div>`+
+    sorted.map(([l,b])=>{
+      const pct=(b/maxBytes*100).toFixed(1);
+      return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+        <span style="font-size:12px;width:120px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</span>
+        <div style="flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${lc(l)};border-radius:3px"></div>
+        </div>
+        <span style="font-size:12px;color:var(--text2);width:56px;text-align:right;flex-shrink:0">${fmtBytes(b)}</span>
+      </div>`;
+    }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   CONTRIBUTORS
+═══════════════════════════════════════════════ */
+function renderContributors(ctbStats){
+  const el=$('contribBody');
+  if(!ctbStats.length){
+    el.innerHTML=`<tr><td colspan="6" style="padding:20px;font-size:14px;color:var(--text3)">Computing contributor data — reload in a moment.</td></tr>`;
+    return;
+  }
+
+  const sorted=[...ctbStats].sort((a,b)=>b.total-a.total).slice(0,15);
+  const maxC=sorted[0]?.total||1;
+
+  $('contribHint').textContent=`Ranked by total commits · ${sorted.length} contributors shown`;
+
+  el.innerHTML=sorted.map((c,i)=>{
+    const totalA=c.weeks.reduce((s,w)=>s+w.a,0);
+    const totalD=c.weeks.reduce((s,w)=>s+w.d,0);
+    const pct=(c.total/maxC*100).toFixed(1);
+    const addColor='rgba(48,209,88,.8)',delColor='rgba(255,69,58,.8)';
+    return`<tr class="contrib-row">
+      <td style="padding:12px;font-size:13px;color:var(--text3);font-weight:600">${i+1}</td>
+      <td style="padding:12px">
+        <a href="https://github.com/${c.author.login}" target="_blank" rel="noopener" class="contrib-cell-name">
+          <img src="${c.author.avatar_url}" alt="${c.author.login}" class="contrib-av" loading="lazy">
+          <span class="contrib-login">${c.author.login}</span>
+        </a>
+      </td>
+      <td class="contrib-num hide-sm" style="padding:12px">${fmtFull(c.total)}</td>
+      <td class="contrib-num hide-sm" style="padding:12px;color:${addColor}">+${fmt(totalA)}</td>
+      <td class="contrib-num hide-sm" style="padding:12px;color:${delColor}">−${fmt(totalD)}</td>
+      <td style="padding:12px;min-width:100px">
+        <div class="contrib-bar-wrap" style="width:80px">
+          <div class="contrib-bar-fill" style="width:${pct}%;background:var(--blue)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">${pct}%</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   ISSUES & PULL REQUESTS
+═══════════════════════════════════════════════ */
+function renderIssues(repo,pulls){
+  /* Issues */
+  const openIssues=repo.open_issues_count;
+  $('issuesContent').innerHTML=`
+    <div style="margin-bottom:16px">
+      <div class="stat-big" style="color:var(--orange)">${fmtFull(openIssues)}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">Open issues (includes PRs)</div>
+    </div>
+    <div class="det-row"><span class="det-lbl">Repository created</span><div class="det-val">${fmtDate(repo.created_at)}</div></div>
+    <div class="det-row"><span class="det-lbl">Last activity</span><div class="det-val">${ago(repo.pushed_at)}</div></div>
+    <div class="det-row"><span class="det-lbl">Subscribers</span><div class="det-val">${fmtFull(repo.subscribers_count)}</div></div>
+    <div style="margin-top:16px;padding:14px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:12px;font-size:12.5px;color:var(--text2)">
+      For exact issue counts and resolution times, authenticate via a GitHub personal access token.
+    </div>`;
+
+  /* PRs */
+  if(!pulls.length){
+    $('prsContent').innerHTML='<p style="font-size:14px;color:var(--text3)">No PR data available.</p>';
+    return;
+  }
+  const open=pulls.filter(p=>p.state==='open').length;
+  const closed=pulls.filter(p=>p.state==='closed');
+  const merged=closed.filter(p=>p.merged_at).length;
+  const rejected=closed.length-merged;
+  const total=pulls.length;
+  const mergeRate=closed.length?Math.round(merged/closed.length*100):0;
+
+  // Avg time to merge (from recent merged PRs)
+  const mergedWithTime=closed.filter(p=>p.merged_at).slice(0,20);
+  let avgMergeHours=null;
+  if(mergedWithTime.length){
+    const avg=mergedWithTime.reduce((s,p)=>(new Date(p.merged_at)-new Date(p.created_at))/3600000+s,0)/mergedWithTime.length;
+    avgMergeHours=avg<24?`${avg.toFixed(0)}h`:avg<720?`${(avg/24).toFixed(1)}d`:`${(avg/720).toFixed(1)}mo`;
+  }
+
+  $('prsContent').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      ${[['Open',open,'var(--blue)'],['Merged',merged,'var(--green)'],['Rejected',rejected,'rgba(255,255,255,.4)']].map(([l,v,c])=>`
+        <div style="text-align:center;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:20px;font-weight:700;color:${c}">${v}</div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:3px">${l}</div>
+        </div>`).join('')}
+    </div>
+    <div class="det-row"><span class="det-lbl">Merge rate</span>
+      <div>
+        <div class="det-val" style="color:var(--green)">${mergeRate}%</div>
+        <div class="progress-bar" style="width:120px"><div class="progress-fill" style="width:${mergeRate}%;background:var(--green)"></div></div>
+      </div>
+    </div>
+    ${avgMergeHours?`<div class="det-row"><span class="det-lbl">Avg time to merge</span><div class="det-val">${avgMergeHours}</div></div>`:''}
+    <div class="det-row"><span class="det-lbl">Sample size</span><div class="det-val">${total} most recent PRs</div></div>
+    <div class="det-row"><span class="det-lbl">Total closed PRs</span><div class="det-val">${fmtFull(closed.length)}</div></div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   RELEASES
+═══════════════════════════════════════════════ */
+function renderReleases(releases){
+  const el=$('releasesContent');
+  if(!releases.length){
+    el.innerHTML='<p style="font-size:14px;color:var(--text3)">No releases found for this repository.</p>';
+    return;
+  }
+
+  el.innerHTML=releases.map((rel,i)=>{
+    const dlTotal=rel.assets?.reduce((s,a)=>s+a.download_count,0)||0;
+    const prev=releases[i+1];
+    const gap=prev?daysBetween(prev.published_at,rel.published_at):null;
+
+    return`<div class="release-item">
+      <div class="release-dot" style="background:${rel.prerelease?'var(--orange)':'var(--green)'}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="release-tag">${rel.tag_name} ${rel.prerelease?'<span style="font-size:11px;font-weight:500;color:var(--orange);background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.2);border-radius:10px;padding:2px 8px;vertical-align:middle">Pre-release</span>':''}</div>
+        <div class="release-meta">${rel.name||''} · ${fmtDate(rel.published_at)} · ${ago(rel.published_at)}${gap?` · <span style="color:var(--text3)">+${gap}d since previous</span>`:''}</div>
+        ${dlTotal>0?`<div class="release-dl">${iDownload()} ${fmtFull(dlTotal)} downloads</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   CI/CD
+═══════════════════════════════════════════════ */
+function renderCICD(runsData){
+  const el=$('cicdContent');
+  if(!runsData||!runsData.workflow_runs?.length){
+    el.innerHTML='<p style="font-size:14px;color:var(--text3)">No workflow runs found. CI/CD may not be configured for this repository.</p>';
+    return;
+  }
+
+  const runs=runsData.workflow_runs.slice(0,30);
+  const success=runs.filter(r=>r.conclusion==='success').length;
+  const failed=runs.filter(r=>r.conclusion==='failure').length;
+  const cancelled=runs.filter(r=>r.conclusion==='cancelled').length;
+  const inProgress=runs.filter(r=>r.status==='in_progress').length;
+  const total=runs.length;
+  const successRate=Math.round(success/Math.max(total-inProgress,1)*100);
+
+  const runColor=r=>{
+    if(r.status==='in_progress')return'var(--yellow)';
+    if(r.conclusion==='success')return'var(--green)';
+    if(r.conclusion==='failure')return'var(--red)';
+    if(r.conclusion==='cancelled')return'rgba(255,255,255,.3)';
+    return'rgba(255,255,255,.15)';
+  };
+  const runLabel=r=>{
+    if(r.status==='in_progress')return'In progress';
+    return r.conclusion?.charAt(0).toUpperCase()+r.conclusion?.slice(1)||r.status;
+  };
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+      ${[['Success rate',successRate+'%','var(--green)'],['Passed',success,'var(--green)'],['Failed',failed,'var(--red)'],['Cancelled',cancelled,'rgba(255,255,255,.35)']].map(([l,v,c])=>`
+        <div style="text-align:center;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px">
+          <div style="font-size:22px;font-weight:700;color:${c}">${v}</div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:3px">${l}</div>
+        </div>`).join('')}
+    </div>
+    <p class="sec-label" style="margin-bottom:10px">Recent runs</p>
+    <div class="run-dots" role="list" aria-label="Recent workflow runs">
+      ${runs.map(r=>`<div class="run-dot" style="background:${runColor(r)}" role="listitem" data-tip="${runLabel(r)} · ${r.name} · ${ago(r.created_at)}" aria-label="${runLabel(r)}: ${r.name}"></div>`).join('')}
+    </div>
+    <div style="margin-top:12px">
+      ${[...new Set(runs.map(r=>r.name))].slice(0,5).map(name=>{
+        const wRuns=runs.filter(r=>r.name===name);
+        const wSuccess=wRuns.filter(r=>r.conclusion==='success').length;
+        const wRate=Math.round(wSuccess/wRuns.length*100);
+        const recentRun=wRuns[0];
+        return`<div class="det-row">
+          <span class="det-lbl" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${runColor(recentRun)}"></div>
+            <span class="det-val">${wRate}% pass · ${ago(recentRun.created_at)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   SECURITY & COMMUNITY
+═══════════════════════════════════════════════ */
+function renderSecurity(community,repo){
+  /* Community health */
+  const cel=$('communityContent');
+  if(!community){
+    cel.innerHTML='<p style="font-size:14px;color:var(--text3)">Community data unavailable.</p>';
+  }else{
+    const score=community.health_percentage||0;
+    const scoreColor=score>=80?'var(--green)':score>=50?'var(--orange)':'var(--red)';
+    const files=[
+      ['README',!!community.files?.readme],
+      ['License',!!community.files?.license||!!repo.license],
+      ['Contributing guide',!!community.files?.contributing],
+      ['Code of conduct',!!community.files?.code_of_conduct],
+      ['Issue templates',!!community.files?.issue_template],
+      ['PR template',!!community.files?.pull_request_template],
+      ['Security policy',!!community.files?.security||!!repo.security_policy],
+    ];
+    cel.innerHTML=`
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:2.8rem;font-weight:800;letter-spacing:-.04em;color:${scoreColor};line-height:1">${score}%</div>
+        <div>
+          <div style="font-size:14px;font-weight:600">Community Health Score</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:3px">Provided by GitHub</div>
+          <div class="progress-bar" style="width:120px;margin-top:8px"><div class="progress-fill" style="width:${score}%;background:${scoreColor}"></div></div>
+        </div>
+      </div>
+      ${files.map(([lbl,yes])=>`
+        <div class="health-item">
+          <span class="health-label">${lbl}</span>
+          <span class="${yes?'health-yes':'health-no'}">${yes
+            ?`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Present"><polyline points="20 6 9 17 4 12"/></svg>`
+            :`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Missing"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+          }</span>
+        </div>`).join('')}`;
+  }
+
+  /* Security */
+  const sel=$('securityContent');
+  const items=[
+    {lbl:'Repository visibility',val:repo.private?'Private':'Public',ok:true},
+    {lbl:'License present',val:repo.license?.name||'None',ok:!!repo.license},
+    {lbl:'Security policy',val:community?.files?.security?'Present':'Not found',ok:!!community?.files?.security},
+    {lbl:'Dependency graph',val:'Enabled for public repos',ok:true},
+    {lbl:'Issues enabled',val:repo.has_issues?'Yes':'No',ok:repo.has_issues},
+    {lbl:'Wiki',val:repo.has_wiki?'Enabled':'Disabled',ok:repo.has_wiki},
+    {lbl:'Projects',val:repo.has_projects?'Enabled':'Disabled',ok:repo.has_projects},
+  ];
+  sel.innerHTML=`
+    <div style="padding:14px;background:rgba(10,132,255,.06);border:1px solid rgba(10,132,255,.15);border-radius:12px;font-size:12.5px;color:var(--text2);margin-bottom:18px">
+      Full Dependabot alerts and vulnerability scanning require a GitHub token with <code>security_events</code> scope.
+    </div>
+    ${items.map(({lbl,val,ok})=>`
+      <div class="health-item">
+        <span class="health-label">${lbl}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;color:var(--text2)">${val}</span>
+          <span class="${ok?'health-yes':'health-no'}" style="line-height:0">
+            ${ok?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+                :`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`}
+          </span>
+        </div>
+      </div>`).join('')}`;
+}
+
+/* ═══════════════════════════════════════════════
+   ICON SVGs (16×16, Heroicons outline)
+═══════════════════════════════════════════════ */
+const SI=(d)=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const iStar    =()=>SI('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>');
+const iFork    =()=>SI('<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>');
+const iEye     =()=>SI('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>');
+const iIssue   =()=>SI('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>');
+const iBranch  =()=>SI('<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>');
+const iTag     =()=>SI('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>');
+const iCode    =()=>SI('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>');
+const iSize    =()=>SI('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>');
+const iLines   =()=>SI('<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/>');
+const iFile    =()=>SI('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>');
+const iRelease =()=>SI('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>');
+const iDownload=()=>SI('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>');
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const p=new URLSearchParams(location.search).get('repo');
+  if(p){$('repoInput').value=p;handleSearch(new Event('submit'))}
+});
+</script>
+</body>
+</html>
